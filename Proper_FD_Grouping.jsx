@@ -87,7 +87,9 @@ function properFdGrouping()
 				prodGroup = curPiece.groupItems.add();
 				prodGroup.name = "Prod Info";
 				checkPaths(curPiece);
-
+				makeSubGroups(artGroup);
+				makeSubGroups(prodGroup);
+				deleteEmptyGroups(curPiece);
 			}
 		}
 	}
@@ -114,6 +116,10 @@ function properFdGrouping()
 			{
 				curPiece.moveToBeginning(dest);
 			}
+			else
+			{
+				wrongColors.push(curPiece);
+			}
 		}
 		else if(curPiece.typename === "CompoundPathItem")
 		{
@@ -121,6 +127,10 @@ function properFdGrouping()
 			if(dest)
 			{
 				curPiece.moveToBeginning(dest);
+			}
+			else
+			{
+				wrongColors.push(curPiece);
 			}
 		}
 		else if(curPiece.typename === "GroupItem")
@@ -182,7 +192,106 @@ function properFdGrouping()
 		}
 
 		return result;
+	}
 
+	function makeSubGroups(group)
+	{
+		var colorObj = {};
+		var len = group.pageItems.length;
+		var curItem,curColor;
+		for(var x = len-1;x>=0;x--)
+		{
+			curItem = group.pageItems[x];
+			if(curItem.typename === "CompoundPathItem")
+			{
+				if(curItem.pathItems[0].filled)
+				{
+					curColor = curItem.pathItems[0].fillColor.spot.name;
+				}
+				else if(curItem.pathItems[0].stroked)
+				{
+					curColor = curItem.pathItems[0].strokeColor.spot.name;
+				}
+			}
+			else if(curItem.typename === "PathItem")
+			{
+				if(curItem.filled)
+				{
+					curColor = curItem.fillColor.spot.name;
+				}
+				else if(curItem.stroked)
+				{
+					curColor = curItem.strokeColor.spot.name;
+				}
+			}
+			if(!colorObj[curColor])
+			{
+				colorObj[curColor] = [];
+			}
+			colorObj[curColor].push(curItem);
+		}
+
+		//create a group for each color and move all items of that color into the group
+		var colorGroup,len;
+		for(var color in colorObj)
+		{
+			colorGroup = group.groupItems.add();
+			colorGroup.name = color;
+			len = colorObj[color].length;
+			for(var x=0;x<len;x++)
+			{
+				colorObj[color][x].moveToBeginning(colorGroup);
+			}
+		}
+
+		//subgroups have been created
+		//rearrange the art so the largest pieces are 
+		//in the back and smallest are in the front.
+		rearrange(group);
+
+	}
+
+	function rearrange(group)
+	{
+		var len = group.groupItems.length;
+		var smallest,
+			smallestGroup,
+			curGroup;
+		while(len > 0)
+		{
+			smallest = group.groupItems[0].height + group.groupItems[0].width;
+			smallestGroup = group.groupItems[0];
+			for(var x = 0; x<len;x++)
+			{
+				curGroup = group.groupItems[x];
+				if(curGroup.height + curGroup.width < smallest)
+				{
+					smallest = curGroup.height + curGroup.width;
+					smallestGroup = curGroup;
+				}
+			}
+			smallestGroup.zOrder(ZOrderMethod.SENDTOBACK);
+			len--;
+		}
+	}
+
+	function deleteEmptyGroups(group)
+	{
+		var len = group.pageItems.length;
+		var curItem;
+		for(var x=len-1;x>=0;x--)
+		{
+			curItem = group.pageItems[x];
+			if(curItem.name !== "Artwork" && curItem.name !== "Prod Info")
+			{
+				curItem.remove();
+			}
+		}
+	}
+
+	function hideUnhide(layer,bool)
+	{
+		layer.visible = bool;
 	}
 
 	function groupPrepress()
@@ -191,9 +300,14 @@ function properFdGrouping()
 		layers = docRef.layers;
 		ppLay = getPPLay(layers);
 
+		//unlock and unhide prepress layer
+		hideUnhide(ppLay,true);
 		fixCompoundPaths();
 
 		loopSizes();
+
+
+		hideUnhide(ppLay,false);
 
 		if(wrongColors.length > 0)
 		{
