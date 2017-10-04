@@ -64,6 +64,7 @@ function properFdGrouping()
 				app.executeMenuCommand("ungroup");
 				app.executeMenuCommand("ungroup");
 				app.executeMenuCommand("compoundPath");
+				docRef.selection = null;
 			}
 		}
 	}
@@ -82,6 +83,19 @@ function properFdGrouping()
 			{
 				curPiece = curLay.pageItems[p];
 				pieceName = curPiece.name;
+				// if(pieceName === "Artwork" || pieceName === "Prod Info")
+				// {
+				// 	curPiece.name += "-existing";
+				// }
+				try
+				{
+					curPiece.groupItems["Artwork"].name += "-existing";
+					curPiece.groupItems["Prod Info"].name += "-existing";
+				}
+				catch(e)
+				{
+					// just keep going
+				}
 				artGroup = curPiece.groupItems.add();
 				artGroup.name = "Artwork";
 				prodGroup = curPiece.groupItems.add();
@@ -116,10 +130,10 @@ function properFdGrouping()
 			{
 				curPiece.moveToBeginning(dest);
 			}
-			else
-			{
-				wrongColors.push(curPiece);
-			}
+			// else
+			// {
+			// 	wrongColors.push(curPiece);
+			// }
 		}
 		else if(curPiece.typename === "CompoundPathItem")
 		{
@@ -128,10 +142,10 @@ function properFdGrouping()
 			{
 				curPiece.moveToBeginning(dest);
 			}
-			else
-			{
-				wrongColors.push(curPiece);
-			}
+			// else
+			// {
+			// 	wrongColors.push(curPiece);
+			// }
 		}
 		else if(curPiece.typename === "GroupItem")
 		{
@@ -162,10 +176,15 @@ function properFdGrouping()
 				{
 					result = artGroup;
 				}
+				else
+				{
+					path.moveToBeginning(tempLay);
+					wrongColors.push(path);
+				}
 			}
 			else
 			{
-				result = undefined;
+				path.moveToBeginning(tempLay);
 				wrongColors.push(path);
 			}
 		}
@@ -183,12 +202,21 @@ function properFdGrouping()
 				{
 					result = artGroup;
 				}
+				else
+				{
+					path.moveToBeginning(tempLay);
+					wrongColors.push(path);
+				}
 			}
 			else
 			{
-				result = undefined;
+				path.moveToBeginning(tempLay);
 				wrongColors.push(path);
 			}
+		}
+		else
+		{
+			path.remove();
 		}
 
 		return result;
@@ -242,6 +270,7 @@ function properFdGrouping()
 			{
 				colorObj[color][x].moveToBeginning(colorGroup);
 			}
+			rearrange(colorGroup);
 		}
 
 		//subgroups have been created
@@ -253,17 +282,17 @@ function properFdGrouping()
 
 	function rearrange(group)
 	{
-		var len = group.groupItems.length;
+		var len = group.pageItems.length;
 		var smallest,
 			smallestGroup,
 			curGroup;
 		while(len > 0)
 		{
-			smallest = group.groupItems[0].height + group.groupItems[0].width;
-			smallestGroup = group.groupItems[0];
-			for(var x = 0; x<len;x++)
+			smallest = group.pageItems[0].height + group.pageItems[0].width;
+			smallestGroup = group.pageItems[0];
+			for(var x = len-1; x>=0;x--)
 			{
-				curGroup = group.groupItems[x];
+				curGroup = group.pageItems[x];
 				if(curGroup.height + curGroup.width < smallest)
 				{
 					smallest = curGroup.height + curGroup.width;
@@ -299,6 +328,8 @@ function properFdGrouping()
 		docRef = app.activeDocument;
 		layers = docRef.layers;
 		ppLay = getPPLay(layers);
+		tempLay = layers.add();
+		tempLay.name = "temp";
 
 		//unlock and unhide prepress layer
 		hideUnhide(ppLay,true);
@@ -315,6 +346,10 @@ function properFdGrouping()
 			alert("Exiting batch.");
 			valid = false;
 		}
+		if(tempLay.pageItems.length < 1)
+		{
+			tempLay.remove();
+		}
 	}
 
 
@@ -322,7 +357,7 @@ function properFdGrouping()
 	///Logic Container///
 	/////////////////////
 
-	var docRef,layers,ppLay,artGroup,prodGroup;
+	var docRef,layers,ppLay,artGroup,prodGroup,tempLay;
 
 	var prodColors = "cut line, cutline, sewline, sew line, thru-cut, jock tag b, info b";
 	var artColors = "collar b, collar 2 b, collar info b, care label b, care label 2 b, boombah logo b, boombah logo 2 b, pocket facing, pocket welt 1, pocket welt 2";
