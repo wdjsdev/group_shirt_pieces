@@ -285,17 +285,20 @@ function properFdGrouping()
 		var len = group.pageItems.length;
 		var smallest,
 			smallestGroup,
-			curGroup;
+			curGroup,
+			curArea;
 		while(len > 0)
 		{
-			smallest = group.pageItems[0].height + group.pageItems[0].width;
+			// smallest = group.pageItems[0].height + group.pageItems[0].width;
+			smallest = getArea(group.pageItems[0]);
 			smallestGroup = group.pageItems[0];
 			for(var x = len-1; x>=0;x--)
 			{
 				curGroup = group.pageItems[x];
-				if(curGroup.height + curGroup.width < smallest)
+				curArea = getArea(curGroup);
+				if(curArea < smallest)
 				{
-					smallest = curGroup.height + curGroup.width;
+					smallest = curArea;
 					smallestGroup = curGroup;
 				}
 			}
@@ -350,6 +353,35 @@ function properFdGrouping()
 		{
 			tempLay.remove();
 		}
+	}
+
+	function getArea(item)
+	{
+		var totalArea = 0;
+		var len,thisItem, thisType = item.typename;
+		
+		if(thisType === "PathItem")
+		{
+			totalArea += Math.abs(item.area);
+		}
+		else if(thisType === "CompoundPathItem")
+		{
+			len = item.pathItems.length;
+			for(var y=0;y<len;y++)
+			{
+				totalArea += Math.abs(item.pathItems[y].area);
+			}
+		}
+		else if(thisType === "GroupItem")
+		{
+			len = item.pageItems.length;
+			for(var x=0;x<len;x++)
+			{
+				thisItem = item.pageItems[x];
+				totalArea += getArea(thisItem);
+			}
+		}
+		return Math.round(Math.abs(totalArea));
 	}
 
 
