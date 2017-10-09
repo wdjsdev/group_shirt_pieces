@@ -28,7 +28,9 @@ function fixNotches()
 			var srcPieceCopy = srcPiece.duplicate(docRef);
 			srcPieceCopy.moveToBeginning(thisPiece);
 		}
+		$.writeln("finished " + curSize);
 	}
+	$.writeln("finished " + docRef.name + "\n");
 	ppLay.visible = false;
 
 
