@@ -31,11 +31,7 @@ function properFdGrouping()
 				var allDocs = btnGroup.add("button", undefined, "All Open Documents");
 					allDocs.onClick = function()
 					{
-						while(app.documents.length > 0 && valid)
-						{
-							groupPrepress();
-							app.activeDocument.close(SaveOptions.SAVECHANGES);
-						}
+						batchAll();
 						w.close();
 					}
 				var cancel = btnGroup.add("button", undefined, "Cancel");
@@ -45,6 +41,15 @@ function properFdGrouping()
 					}
 		w.show();
 		/* beautify ignore:end */
+	}
+
+	function batchAll()
+	{
+		while(app.documents.length > 0 && valid)
+		{
+			groupPrepress();
+			app.activeDocument.close(SaveOptions.SAVECHANGES);
+		}
 	}
 
 	function fixCompoundPaths()
@@ -226,32 +231,11 @@ function properFdGrouping()
 	{
 		var colorObj = {};
 		var len = group.pageItems.length;
-		var curItem,curColor;
+		var curItem,curColor,colorGroup;
 		for(var x = len-1;x>=0;x--)
 		{
 			curItem = group.pageItems[x];
-			if(curItem.typename === "CompoundPathItem")
-			{
-				if(curItem.pathItems[0].filled)
-				{
-					curColor = curItem.pathItems[0].fillColor.spot.name;
-				}
-				else if(curItem.pathItems[0].stroked)
-				{
-					curColor = curItem.pathItems[0].strokeColor.spot.name;
-				}
-			}
-			else if(curItem.typename === "PathItem")
-			{
-				if(curItem.filled)
-				{
-					curColor = curItem.fillColor.spot.name;
-				}
-				else if(curItem.stroked)
-				{
-					curColor = curItem.strokeColor.spot.name;
-				}
-			}
+			curColor = getCurColor(curItem);
 			if(!colorObj[curColor])
 			{
 				colorObj[curColor] = [];
@@ -260,17 +244,18 @@ function properFdGrouping()
 		}
 
 		//create a group for each color and move all items of that color into the group
-		var colorGroup,len;
+		// var colorGroup,len;
 		for(var color in colorObj)
 		{
 			colorGroup = group.groupItems.add();
-			colorGroup.name = color;
+			
 			len = colorObj[color].length;
 			for(var x=0;x<len;x++)
 			{
 				colorObj[color][x].moveToBeginning(colorGroup);
 			}
 			rearrange(colorGroup);
+			colorGroup.name = color;
 		}
 
 		//subgroups have been created
@@ -278,6 +263,34 @@ function properFdGrouping()
 		//in the back and smallest are in the front.
 		rearrange(group);
 
+	}
+
+	function getCurColor(item)
+	{
+		var result;
+		if(item.typename === "CompoundPathItem")
+		{
+			if(item.pathItems[0].filled)
+			{
+				result = item.pathItems[0].fillColor.spot.name;
+			}
+			else if(item.pathItems[0].stroked)
+			{
+				result = item.pathItems[0].strokeColor.spot.name;
+			}
+		}
+		else if(item.typename === "PathItem")
+		{
+			if(item.filled)
+			{
+				result = item.fillColor.spot.name;
+			}
+			else if(item.stroked)
+			{
+				result = item.strokeColor.spot.name;
+			}
+		}
+		return result;
 	}
 
 	function rearrange(group)
@@ -353,6 +366,9 @@ function properFdGrouping()
 		{
 			tempLay.remove();
 		}
+		artgroup = null;
+		prodGroup = null;
+		tempLay = null;
 	}
 
 	function getArea(item)
@@ -401,6 +417,7 @@ function properFdGrouping()
 	{
 		batchPrompt();
 	}
+
 
 }
 properFdGrouping();
