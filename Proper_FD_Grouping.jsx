@@ -45,9 +45,32 @@ function properFdGrouping()
 
 	function batchAll()
 	{
+		var batchFolder = new Folder("~/Desktop/converted_template_backups/");  
+		  
+		var myFolder = batchFolder.selectDlg ("Select file, preselecting this folder"); 
+
+		var files = myFolder.getFiles();
+		var len = files.length;
+
+		for(var x=0;x<len;x++)
+		{
+			if(files[x].name.indexOf("FD") === 0)
+			{
+				app.open(files[x]);
+				batchFiles.push(app.activeDocument);
+			}
+		}
+
+		len = batchFiles.length;
+		for(var x=0;x<len && valid;x++)
+		{
+			batchFiles[x].activate();
+			groupPrepress();
+		}
+
 		while(app.documents.length > 0 && valid)
 		{
-			groupPrepress();
+			// groupPrepress();
 			app.activeDocument.close(SaveOptions.SAVECHANGES);
 		}
 	}
@@ -248,14 +271,14 @@ function properFdGrouping()
 		for(var color in colorObj)
 		{
 			colorGroup = group.groupItems.add();
-			
+			colorGroup.name = color;
 			len = colorObj[color].length;
 			for(var x=0;x<len;x++)
 			{
 				colorObj[color][x].moveToBeginning(colorGroup);
 			}
 			rearrange(colorGroup);
-			colorGroup.name = color;
+			
 		}
 
 		//subgroups have been created
@@ -371,27 +394,76 @@ function properFdGrouping()
 		tempLay = null;
 	}
 
+	function getLargest(arr)
+	{
+		var largest, lDim, thisItem, thisDim, rmIndex, len = arr.length;
+
+		largest = arr[0];
+		lDim = Math.abs(largest.area);
+		rmIndex = 0;
+		for (var x = len - 1; x > 0; x--)
+		{
+			thisItem = arr[x];
+			thisDim = Math.abs(thisItem.area);
+			if (thisDim > lDim)
+			{
+				largest = thisItem;
+				lDim = thisDim;
+				rmIndex = x;
+			}
+		}
+		return {"largest":largest,"index":rmIndex};
+
+	}
+
 	function getArea(item)
 	{
 		var totalArea = 0;
-		var len,thisItem, thisType = item.typename;
-		
-		if(thisType === "PathItem")
+		var len, thisItem, thisType = item.typename;
+
+		if (thisType === "PathItem")
 		{
 			totalArea += Math.abs(item.area);
 		}
-		else if(thisType === "CompoundPathItem")
+		else if (thisType === "CompoundPathItem")
 		{
 			len = item.pathItems.length;
-			for(var y=0;y<len;y++)
+			var cpItems = [];
+			for (var x = 0; x < len; x++)
 			{
-				totalArea += Math.abs(item.pathItems[y].area);
+				cpItems.push(item.pathItems[x]);
+			}
+
+			var curItem, intersections,largest,nextLargest;
+
+			while (cpItems.length > 0)
+			{
+				curItem = cpItems[0];
+				intersections = [curItem];
+				len = cpItems.length;
+				for (var x = len - 1; x >= 1; x--)
+				{
+					if (intersects(curItem, cpItems[x]))
+					{
+						intersections.push(cpItems[x])
+						cpItems.splice(x, 1);
+					}
+				}
+				cpItems.splice(0, 1);
+				largest = getLargest(intersections);
+				totalArea += Math.abs(largest.largest.area);
+				intersections.splice(largest.index,1);
+				if(intersections.length)
+				{
+					nextLargest = getLargest(intersections);
+					totalArea -= Math.abs(nextLargest.largest.area);
+				}
 			}
 		}
-		else if(thisType === "GroupItem")
+		else if (thisType === "GroupItem")
 		{
 			len = item.pageItems.length;
-			for(var x=0;x<len;x++)
+			for (var x = 0; x < len; x++)
 			{
 				thisItem = item.pageItems[x];
 				totalArea += getArea(thisItem);
@@ -405,7 +477,7 @@ function properFdGrouping()
 	///Logic Container///
 	/////////////////////
 
-	var docRef,layers,ppLay,artGroup,prodGroup,tempLay;
+	var docRef,layers,ppLay,artGroup,prodGroup,tempLay,batchFiles=[];
 
 	var prodColors = "cut line, cutline, sewline, sew line, thru-cut, jock tag b, info b";
 	var artColors = "collar b, collar 2 b, collar info b, care label b, care label 2 b, boombah logo b, boombah logo 2 b, pocket facing, pocket welt 1, pocket welt 2";
