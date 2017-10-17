@@ -22,16 +22,23 @@ function properFdGrouping()
 		/* beautify ignore:start */
 		var w = new Window("dialog", "Current Document or All Documents?");
 			var btnGroup = w.add("group");
+			btnGroup.orientation = "column";
 				var oneDoc = btnGroup.add("button", undefined, "Just This Document");
 					oneDoc.onClick = function()
 					{
 						groupPrepress();
 						w.close();
 					}
+				var getBatchDocs = btnGroup.add("button", undefined, "Open A Folder to Batch");
+					getBatchDocs.onClick = function()
+					{
+						getFilesToBatch();
+						w.close();
+					}
 				var allDocs = btnGroup.add("button", undefined, "All Open Documents");
 					allDocs.onClick = function()
 					{
-						batchAll();
+						batchOpenDocs();
 						w.close();
 					}
 				var cancel = btnGroup.add("button", undefined, "Cancel");
@@ -43,7 +50,29 @@ function properFdGrouping()
 		/* beautify ignore:end */
 	}
 
-	function batchAll()
+	function batchOpenDocs()
+	{
+		var len = app.documents.length;
+		for(var x=0;x<len;x++)
+		{
+			batchFiles.push(app.documents[x]);
+		}
+
+		len = batchFiles.length;
+		for(var x=0;x<len && valid;x++)
+		{
+			batchFiles[x].activate();
+			groupPrepress()
+		}
+
+		while(app.documents.length)
+		{
+			app.activeDocument.close(SaveOptions.SAVECHANGES);
+		}
+
+	}
+
+	function getFilesToBatch()
 	{
 		var batchFolder = new Folder("~/Desktop/converted_template_backups/");  
 		  
@@ -110,6 +139,10 @@ function properFdGrouping()
 			for(var p=pieceLen-1;p>=0;p--)
 			{
 				curPiece = curLay.pageItems[p];
+				if(curPiece.typename === "PathItem" || curPiece.typename === "CompoundPathItem")
+				{
+
+				}
 				pieceName = curPiece.name;
 				// if(pieceName === "Artwork" || pieceName === "Prod Info")
 				// {
@@ -425,6 +458,14 @@ function properFdGrouping()
 		{
 			totalArea += Math.abs(item.area);
 		}
+
+		
+		//this version works fine in most cases,
+		//however it breaks down if two subpaths of a compound
+		//path are only partially overlapping. it also ignores
+		//positive areas inside of negative areas in a compound path
+		//for example, the bullseye of a target shaped compound path
+		//made of 3 concentric circles
 		else if (thisType === "CompoundPathItem")
 		{
 			len = item.pathItems.length;
@@ -460,6 +501,32 @@ function properFdGrouping()
 				}
 			}
 		}
+
+		//////////////////
+		//Legacy Version//
+		////Do Not Use////
+		//////////////////
+		// else if(thisType === "CompoundPathItem")
+		// {
+		// 	app.selection = null;
+		// 	cpCopy = item.duplicate(tempLay);
+		// 	cpCopy.selected = true;
+		// 	app.doScript("Unite", "Scripting");
+		// 	totalArea += getArea(cpCopy);
+		// 	cpCopy.remove();
+		// }
+
+		// else if(thisType === "CompoundPathItem")
+		// {
+		// 	cpCopy = item.duplicate(tempLay);
+		// 	docRef.selection = null;
+		// 	cpCopy.selected = true;
+		// 	app.executeMenuCommand("Live Pathfinder Add");
+		// 	app.executeMenuCommand("expandStyle");
+		// 	cpCopy = tempLay.groupItems[0];
+		// 	totalArea += getArea(cpCopy);
+		// 	cpCopy.remove();
+		// }
 		else if (thisType === "GroupItem")
 		{
 			len = item.pageItems.length;
