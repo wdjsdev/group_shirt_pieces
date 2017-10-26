@@ -57,17 +57,7 @@ function properFdGrouping()
 		{
 			batchFiles.push(app.documents[x]);
 		}
-
-		len = batchFiles.length;
-		for(var x=len-1;x>=0 && valid;x--)
-		{
-			batchFiles[x].activate();
-			if (!groupPrepress())
-			{
-				batchFiles.splice(x,1);
-			}
-		}
-
+		executeBatch();
 		saveAndClose();
 	}
 
@@ -88,20 +78,22 @@ function properFdGrouping()
 				batchFiles.push(app.activeDocument);
 			}
 		}
+		executeBatch();
+		saveAndClose();
+	}
 
-		len = batchFiles.length;
+	function executeBatch()
+	{
+		var len = batchFiles.length;
 		for(var x=len-1;x>=0 && valid;x--)
 		{
 			batchFiles[x].activate();
 			if(!groupPrepress())
 			{
-				$.writeln("spliced " + batchFiles[x].name + " from batchFiles array.");
-				$.writeln("batchFiles.length = " + batchFiles.length);
+				problemFiles.push(batchFiles[x]);
 				batchFiles.splice(x,1);
 			}
 		}
-
-		saveAndClose();
 	}
 
 	function saveAndClose()
@@ -112,6 +104,10 @@ function properFdGrouping()
 			batchFiles[x].activate();
 			app.executeMenuCommand("fitin");
 			batchFiles[x].close(SaveOptions.SAVECHANGES);
+		}
+		if(problemFiles.length)
+		{
+			alert(problemFiles.length + " files had incorrect colors.");
 		}
 	}
 
@@ -417,8 +413,7 @@ function properFdGrouping()
 
 		if(wrongColors.length > 0)
 		{
-			alert("There were " + wrongColors.length + " items in the file: " + docRef.name + " that used wrong colors. Fix it up and try again.");
-			$.writeln(wrongColors.join("\n"));
+			$.writeln("There were " + wrongColors.length + " items in the file: " + docRef.name + " that used wrong colors. Fix it up and try again.");
 			wrongColors = [];
 			return false;
 		}
@@ -566,6 +561,7 @@ function properFdGrouping()
 	var artRegEx = /[cb][\d]{1,2}/i;
 
 	var wrongColors = [];
+	var problemFiles = [];
 
 	if(valid)
 	{
