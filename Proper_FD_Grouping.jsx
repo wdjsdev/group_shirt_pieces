@@ -59,17 +59,16 @@ function properFdGrouping()
 		}
 
 		len = batchFiles.length;
-		for(var x=0;x<len && valid;x++)
+		for(var x=len-1;x>=0 && valid;x--)
 		{
 			batchFiles[x].activate();
-			groupPrepress()
+			if (!groupPrepress())
+			{
+				batchFiles.splice(x,1);
+			}
 		}
 
-		while(app.documents.length)
-		{
-			app.activeDocument.close(SaveOptions.SAVECHANGES);
-		}
-
+		saveAndClose();
 	}
 
 	function getFilesToBatch()
@@ -91,16 +90,28 @@ function properFdGrouping()
 		}
 
 		len = batchFiles.length;
-		for(var x=0;x<len && valid;x++)
+		for(var x=len-1;x>=0 && valid;x--)
 		{
 			batchFiles[x].activate();
-			groupPrepress();
+			if(!groupPrepress())
+			{
+				$.writeln("spliced " + batchFiles[x].name + " from batchFiles array.");
+				$.writeln("batchFiles.length = " + batchFiles.length);
+				batchFiles.splice(x,1);
+			}
 		}
 
-		while(app.documents.length > 0 && valid)
+		saveAndClose();
+	}
+
+	function saveAndClose()
+	{
+		len = batchFiles.length;
+		for(var x=len-1;x>=0;x--)
 		{
-			// groupPrepress();
-			app.activeDocument.close(SaveOptions.SAVECHANGES);
+			batchFiles[x].activate();
+			app.executeMenuCommand("fitin");
+			batchFiles[x].close(SaveOptions.SAVECHANGES);
 		}
 	}
 
@@ -114,6 +125,8 @@ function properFdGrouping()
 			thisPath = cPaths[cp];
 			if(thisPath.layer.parent.name === "Prepress" && thisPath.pathItems.length === 0)
 			{
+				thisPath.layer.locked = false;
+				thisPath.layer.visible = true;
 				docRef.selection = null;
 				thisPath.selected = true;
 				app.executeMenuCommand("noCompoundPath");
@@ -134,20 +147,16 @@ function properFdGrouping()
 		for(var ls=0;ls<ppLen;ls++)
 		{
 			curLay = ppLay.layers[ls];
+			curLay.visible = true;
+			curLay.locked = false;
 			curSize = curLay.name;
 			pieceLen = curLay.pageItems.length;
 			for(var p=pieceLen-1;p>=0;p--)
 			{
 				curPiece = curLay.pageItems[p];
-				if(curPiece.typename === "PathItem" || curPiece.typename === "CompoundPathItem")
-				{
-
-				}
+				curPiece.hidden = false;
+				curPiece.locked = false;
 				pieceName = curPiece.name;
-				// if(pieceName === "Artwork" || pieceName === "Prod Info")
-				// {
-				// 	curPiece.name += "-existing";
-				// }
 				try
 				{
 					curPiece.groupItems["Artwork"].name += "-existing";
@@ -191,10 +200,6 @@ function properFdGrouping()
 			{
 				curPiece.moveToBeginning(dest);
 			}
-			// else
-			// {
-			// 	wrongColors.push(curPiece);
-			// }
 		}
 		else if(curPiece.typename === "CompoundPathItem")
 		{
@@ -203,10 +208,6 @@ function properFdGrouping()
 			{
 				curPiece.moveToBeginning(dest);
 			}
-			// else
-			// {
-			// 	wrongColors.push(curPiece);
-			// }
 		}
 		else if(curPiece.typename === "GroupItem")
 		{
@@ -399,6 +400,7 @@ function properFdGrouping()
 	{
 		docRef = app.activeDocument;
 		layers = docRef.layers;
+		swatches = docRef.swatches;
 		ppLay = getPPLay(layers);
 		tempLay = layers.add();
 		tempLay.name = "temp";
@@ -406,6 +408,7 @@ function properFdGrouping()
 		//unlock and unhide prepress layer
 		hideUnhide(ppLay,true);
 		fixCompoundPaths();
+		fixSwatches();
 
 		loopSizes();
 
@@ -414,9 +417,10 @@ function properFdGrouping()
 
 		if(wrongColors.length > 0)
 		{
-			alert("There were " + wrongColors.length + " items in this file that used wrong colors. Fix it up and try again.");
-			alert("Exiting batch.");
-			valid = false;
+			alert("There were " + wrongColors.length + " items in the file: " + docRef.name + " that used wrong colors. Fix it up and try again.");
+			$.writeln(wrongColors.join("\n"));
+			wrongColors = [];
+			return false;
 		}
 		if(tempLay.pageItems.length < 1)
 		{
@@ -425,6 +429,7 @@ function properFdGrouping()
 		artgroup = null;
 		prodGroup = null;
 		tempLay = null;
+		return true;
 	}
 
 	function getLargest(arr)
@@ -539,12 +544,22 @@ function properFdGrouping()
 		return Math.round(Math.abs(totalArea));
 	}
 
+	function fixSwatches()
+	{
+		var swatchLen = swatches.length;
+		for(var x=0;x<swatchLen;x++)
+		{
+			swatches[x].name = swatches[x].name.replace(/^\s*/,"");
+			swatches[x].name = swatches[x].name.replace(/\s*$/,"");
+		}
+	}
+
 
 	////////End//////////
 	///Logic Container///
 	/////////////////////
 
-	var docRef,layers,ppLay,artGroup,prodGroup,tempLay,batchFiles=[];
+	var docRef,layers,swatches,ppLay,artGroup,prodGroup,tempLay,batchFiles=[];
 
 	var prodColors = "cut line, cutline, sewline, sew line, thru-cut, jock tag b, info b";
 	var artColors = "collar b, collar 2 b, collar info b, care label b, care label 2 b, boombah logo b, boombah logo 2 b, pocket facing, pocket welt 1, pocket welt 2";
