@@ -156,6 +156,13 @@ function properFdGrouping()
 				try
 				{
 					curPiece.groupItems["Artwork"].name += "-existing";
+				}
+				catch(e)
+				{
+					// just keep going
+				}
+				try
+				{
 					curPiece.groupItems["Prod Info"].name += "-existing";
 				}
 				catch(e)
