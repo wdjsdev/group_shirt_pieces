@@ -2,7 +2,8 @@
 
 function determineBatch()
 {
-	#include "/Volumes/Customization/Library/Scripts/Script Resources/Data/Utilities_Container.js";
+	var valid = false;
+	eval("#include \"/Volumes/Customization/Library/Scripts/Script Resources/Data/Utilities_Container.jsxbin\"");
 
 	var containerGroup, dests = [];
 	var bd = new Date();
