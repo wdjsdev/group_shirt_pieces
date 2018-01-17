@@ -12,104 +12,106 @@ function properFdGrouping()
 {
 	var valid = true;
 	eval("#include \"/Volumes/Customization/Library/Scripts/Script Resources/Data/Utilities_Container.jsxbin\"");
+	eval("#include \"/Volumes/Customization/Library/Scripts/Script Resources/Data/Batch_Framework.jsxbin\"");
 
 	///////Begin/////////
 	///Logic Container///
 	/////////////////////
 
-	function batchPrompt()
-	{
-		/* beautify ignore:start */
-		var w = new Window("dialog", "Current Document or All Documents?");
-			var btnGroup = w.add("group");
-			btnGroup.orientation = "column";
-				var oneDoc = btnGroup.add("button", undefined, "Just This Document");
-					oneDoc.onClick = function()
-					{
-						groupPrepress();
-						w.close();
-					}
-				var getBatchDocs = btnGroup.add("button", undefined, "Open A Folder to Batch");
-					getBatchDocs.onClick = function()
-					{
-						getFilesToBatch();
-						w.close();
-					}
-				var allDocs = btnGroup.add("button", undefined, "All Open Documents");
-					allDocs.onClick = function()
-					{
-						batchOpenDocs();
-						w.close();
-					}
-				var cancel = btnGroup.add("button", undefined, "Cancel");
-					cancel.onClick = function()
-					{
-						w.close();
-					}
-		w.show();
-		/* beautify ignore:end */
-	}
+	// function batchPrompt()
+	// {
+	// 	/* beautify ignore:start */
+	// 	var w = new Window("dialog", "Current Document or All Documents?");
+	// 		var btnGroup = w.add("group");
+	// 		btnGroup.orientation = "column";
+	// 			var oneDoc = btnGroup.add("button", undefined, "Just This Document");
+	// 				oneDoc.onClick = function()
+	// 				{
+	// 					groupPrepress();
+	// 					w.close();
+	// 				}
+	// 			var getBatchDocs = btnGroup.add("button", undefined, "Open A Folder to Batch");
+	// 				getBatchDocs.onClick = function()
+	// 				{
+	// 					getFilesToBatch();
+	// 					w.close();
+	// 				}
+	// 			var allDocs = btnGroup.add("button", undefined, "All Open Documents");
+	// 				allDocs.onClick = function()
+	// 				{
+	// 					batchOpenDocs();
+	// 					w.close();
+	// 				}
+	// 			var cancel = btnGroup.add("button", undefined, "Cancel");
+	// 				cancel.onClick = function()
+	// 				{
+	// 					w.close();
+	// 				}
+	// 	w.show();
+	// 	/* beautify ignore:end */
+	// }
 
-	function batchOpenDocs()
-	{
-		var len = app.documents.length;
-		for(var x=0;x<len;x++)
-		{
-			batchFiles.push(app.documents[x]);
-		}
-		executeBatch();
-		saveAndClose();
-	}
+	// function batchOpenDocs()
+	// {
+	// 	var len = app.documents.length;
+	// 	for(var x=0;x<len;x++)
+	// 	{
+	// 		batchFiles.push(app.documents[x]);
+	// 	}
+	// 	executeBatch();
+	// 	saveAndClose();
+	// }
 
-	function getFilesToBatch()
-	{
-		var batchFolder = new Folder("~/Desktop/converted_template_backups/");  
+	// function getFilesToBatch()
+	// {
+	// 	var batchFolder = new Folder("~/Desktop/converted_template_backups/");  
 		  
-		var myFolder = batchFolder.selectDlg ("Select file, preselecting this folder"); 
+	// 	var myFolder = batchFolder.selectDlg ("Select file, preselecting this folder"); 
 
-		var files = myFolder.getFiles();
-		var len = files.length;
+	// 	var files = myFolder.getFiles();
+	// 	var len = files.length;
 
-		for(var x=0;x<len;x++)
-		{
-			if(files[x].name.indexOf("FD") === 0)
-			{
-				app.open(files[x]);
-				batchFiles.push(app.activeDocument);
-			}
-		}
-		executeBatch();
-		saveAndClose();
-	}
+	// 	for(var x=0;x<len;x++)
+	// 	{
+	// 		if(files[x].name.indexOf("FD") === 0)
+	// 		{
+	// 			app.open(files[x]);
+	// 			batchFiles.push(app.activeDocument);
+	// 		}
+	// 	}
+	// 	executeBatch();
+	// 	saveAndClose();
+	// }
 
-	function executeBatch()
-	{
-		var len = batchFiles.length;
-		for(var x=len-1;x>=0 && valid;x--)
-		{
-			batchFiles[x].activate();
-			if(!groupPrepress())
-			{
-				problemFiles.push(batchFiles[x]);
-				batchFiles.splice(x,1);
-			}
-		}
-	}
+	// function executeBatch()
+	// {
+	// 	var len = batchFiles.length;
+	// 	for(var x=len-1;x>=0 && valid;x--)
+	// 	{
+	// 		batchFiles[x].activate();
+	// 		if(!groupPrepress())
+	// 		{
+	// 			problemFiles.push(batchFiles[x]);
+	// 			batchFiles.splice(x,1);
+	// 		}
+	// 	}
+	// }
 
-	function saveAndClose()
-	{
-		len = batchFiles.length;
-		for(var x=len-1;x>=0;x--)
-		{
-			batchFiles[x].activate();
-			app.executeMenuCommand("fitin");
-			batchFiles[x].close(SaveOptions.SAVECHANGES);
-		}
-		if(problemFiles.length)
-		{
-			alert(problemFiles.length + " files had incorrect colors.");
-		}
-	}
+	// function saveAndClose()
+	// {
+	// 	len = batchFiles.length;
+	// 	for(var x=len-1;x>=0;x--)
+	// 	{
+	// 		batchFiles[x].activate();
+	// 		app.executeMenuCommand("fitin");
+	// 		batchFiles[x].close(SaveOptions.SAVECHANGES);
+	// 	}
+	// 	if(problemFiles.length)
+	// 	{
+	// 		alert(problemFiles.length + " files had incorrect colors.");
+	// 	}
+	// }
+
 
 	function fixCompoundPaths()
 	{
@@ -563,8 +565,8 @@ function properFdGrouping()
 
 	var docRef,layers,swatches,ppLay,artGroup,prodGroup,tempLay,batchFiles=[];
 
-	var prodColors = "cut line, cutline, sewline, sew line, thru-cut, jock tag b, info b";
-	var artColors = "collar b, collar 2 b, collar info b, care label b, care label 2 b, boombah logo b, boombah logo 2 b, pocket facing, pocket welt 1, pocket welt 2";
+	var prodColors = "cut line, cutline, sewline, sew line, thru-cut, jock tag b, info b, collar info b, care label b, care label 2 b";
+	var artColors = "collar b, collar 2 b, boombah logo b, boombah logo 2 b, pocket facing, pocket welt 1, pocket welt 2";
 	var artRegEx = /[cb][\d]{1,2}/i;
 
 	var wrongColors = [];
@@ -572,7 +574,7 @@ function properFdGrouping()
 
 	if(valid)
 	{
-		batchPrompt();
+		batchInit(groupPrepress,"Rearranged the prepress pieces into 'artwork' and 'prod info' groups.");
 	}
 
 
