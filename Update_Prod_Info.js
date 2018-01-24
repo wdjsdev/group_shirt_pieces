@@ -1,42 +1,12 @@
 
 
-function determineBatch()
+function container()
 {
-	var valid = false;
+	var valid = true;
 	eval("#include \"/Volumes/Customization/Library/Scripts/Script Resources/Data/Utilities_Container.jsxbin\"");
+	eval("#include \"/Volumes/Customization/Library/Scripts/Script Resources/Data/Batch_Framework.jsxbin\"");
+	// eval("#include \"~/Desktop/automation/utilities/Batch_Framework.js\"");
 
-	var containerGroup, dests = [];
-	var bd = new Date();
-	var beforeTime,afterTime;
-
-	var srcDoc = app.documents["corrected_version.ai"];
-	getPieces(srcDoc);
-
-	var w = new Window("dialog", "All documents or just one?");
-		var txtGroup = w.add("group");
-			var txt = txtGroup.add("statictext", undefined, "Do you want to batch all documents or just the current active document?");
-
-		var btnGroup = w.add("group");
-			var allBtn = btnGroup.add("button", undefined, "Batch All");
-				allBtn.onClick = function()
-				{
-					beforeTime = bd.getTime();
-					w.close();
-					batchAll(containerGroup);
-				}
-			var oneBtn = btnGroup.add("button", undefined, "Just Active Doc");
-				oneBtn.onClick = function()
-				{
-					beforeTime = bd.getTime();
-					w.close();
-					justCurrentDoc(containerGroup);
-				}
-			var cancelBtn = btnGroup.add("button", undefined, "Cancel");
-				cancelBtn.onClick = function()
-				{
-					w.close();
-				}
-	w.show();
 
 	function getPieces(doc)
 	{
@@ -65,29 +35,11 @@ function determineBatch()
 			}
 			dests.push(curSizeArray);
 		}
-
 	}
 
-	function justCurrentDoc()
+	function updateProdInfo()
 	{
-		fixNotches();
-	}
-	function batchAll()
-	{
-		while(app.documents.length > 1)
-		{
-			if(app.activeDocument.name == "corrected_version.ai")
-			{
-				app.documents[1].activate();
-			}
-			fixNotches(containerGroup);
-			app.activeDocument.close(SaveOptions.SAVECHANGES);
-		}
-	}
-
-	function fixNotches()
-	{
-		if(app.activeDocument.name === "corrected_version.ai")
+		if(app.activeDocument.name === srcDoc.name)
 		{
 			app.documents[1].activate();
 		}
@@ -97,7 +49,7 @@ function determineBatch()
 
 		var tmpContainerGroup = containerGroup.duplicate(docRef);
 		
-		var ppLay = docRef.layers[0].layers["Prepress"];
+		var ppLay = getPPLay(layers);
 		ppLay.visible = true;
 		
 		var len = dests.length;
@@ -120,13 +72,17 @@ function determineBatch()
 		
 		tmpContainerGroup.remove();
 		ppLay.visible = false;
-
-
-
 	}
-	var ad = new Date();
-	afterTime = ad.getTime();
 
-	$.writeln("Script execution took: " + (afterTime - beforeTime) + " miliseconds.");
+	var srcDoc = app.activeDocument;
+	var containerGroup, dests = [];
+
+	getPieces(srcDoc);
+	batchInit(updateProdInfo,"Replaced production info with fixed version.");
+
+	if(errorList.length)
+	{
+		sendErrors(errorList);
+	}
 }
-determineBatch();
+container();
